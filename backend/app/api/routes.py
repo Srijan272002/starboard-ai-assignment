@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.endpoints import properties, comparables, health, api_discovery
+from app.api.endpoints import properties, comparables, health, api_discovery, extraction
 
 api_router = APIRouter()
 
@@ -7,4 +7,5 @@ api_router = APIRouter()
 api_router.include_router(health.router, prefix="/health", tags=["health"])
 api_router.include_router(properties.router, prefix="/properties", tags=["properties"])
 api_router.include_router(comparables.router, prefix="/comparables", tags=["comparables"])
-api_router.include_router(api_discovery.router, prefix="/discovery", tags=["api-discovery"]) 
+api_router.include_router(api_discovery.router, prefix="/discovery", tags=["api-discovery"])
+api_router.include_router(extraction.router, prefix="/extraction", tags=["extraction"]) 

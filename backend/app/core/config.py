@@ -1,7 +1,8 @@
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Union
 from pydantic import validator
 from pydantic_settings import BaseSettings
 import os
+import json
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Starboard AI"
@@ -22,7 +23,18 @@ class Settings(BaseSettings):
         return f"postgresql://{values.get('POSTGRES_USER')}:{values.get('POSTGRES_PASSWORD')}@{values.get('POSTGRES_SERVER')}/{values.get('POSTGRES_DB')}"
     
     # CORS
-    BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8000"]
+    BACKEND_CORS_ORIGINS: Union[str, List[str]] = ["http://localhost:3000", "http://localhost:8000"]
+    
+    @validator("BACKEND_CORS_ORIGINS", pre=True)
+    def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
+        if isinstance(v, str):
+            try:
+                # Try to parse as JSON first
+                return json.loads(v)
+            except json.JSONDecodeError:
+                # If not JSON, try comma-separated string
+                return [i.strip() for i in v.split(",") if i.strip()]
+        return v
     
     # API Configuration
     COOK_COUNTY_API_URL: str = "https://datacatalog.cookcountyil.gov/resource/"

@@ -1,5 +1,8 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, Text, JSON
 from sqlalchemy.sql import func
+from typing import Optional, Any, Dict
+from pydantic import BaseModel
+from datetime import datetime
 from app.db.base import Base
 
 class Property(Base):
@@ -112,4 +115,59 @@ class APILog(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     def __repr__(self):
-        return f"<APILog(county='{self.county}', success={self.success}, created_at={self.created_at})>" 
+        return f"<APILog(county='{self.county}', success={self.success}, created_at={self.created_at})>"
+
+
+# Pydantic models for API requests and responses
+class PropertySearchParams(BaseModel):
+    """Parameters for property search"""
+    property_type: Optional[str] = None
+    min_size: Optional[float] = None
+    max_size: Optional[float] = None
+    min_price: Optional[float] = None
+    max_price: Optional[float] = None
+    zip_code: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    county: Optional[str] = None
+    limit: Optional[int] = 50
+    offset: Optional[int] = 0
+
+
+class StandardizedProperty(BaseModel):
+    """Standardized property data model"""
+    property_id: str
+    source: str
+    address: str
+    city: str
+    state: str
+    zip_code: str
+    county: str
+    property_type: str
+    square_feet: Optional[float] = None
+    price: Optional[float] = None
+    price_per_sqft: Optional[float] = None
+    year_built: Optional[int] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    description: str = ""
+    listing_url: Optional[str] = None
+    contact_info: Optional[str] = None
+    last_updated: datetime
+    raw_data: Dict[str, Any] = {}
+    data_quality_score: float = 0.0
+
+    class Config:
+        from_attributes = True
+
+
+class APIResponse(BaseModel):
+    """Standard API response model"""
+    success: bool
+    data: Any = None
+    error: Optional[str] = None
+    count: Optional[int] = None
+    total: Optional[int] = None
+
+    class Config:
+        from_attributes = True 

@@ -1,9 +1,10 @@
 from fastapi import APIRouter
-from app.api.endpoints import properties, comparables, health
+from app.api.endpoints import properties, comparables, health, api_discovery
 
 api_router = APIRouter()
 
 # Include endpoint routers
 api_router.include_router(health.router, prefix="/health", tags=["health"])
 api_router.include_router(properties.router, prefix="/properties", tags=["properties"])
-api_router.include_router(comparables.router, prefix="/comparables", tags=["comparables"]) 
+api_router.include_router(comparables.router, prefix="/comparables", tags=["comparables"])
+api_router.include_router(api_discovery.router, prefix="/discovery", tags=["api-discovery"]) 

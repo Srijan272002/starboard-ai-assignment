@@ -75,14 +75,24 @@ class DataTransformer:
             field_name="property_type",
             rule_type="lookup",
             lookup_table={
-                "warehouse": "warehouse",
-                "warehouses": "warehouse",
-                "distribution": "warehouse",
-                "industrial": "industrial",
-                "manufacturing": "industrial",
-                "flex": "flex_space",
-                "office": "office",
-                "retail": "retail"
+                # Industrial types
+                "warehouse": "industrial_warehouse",
+                "warehouses": "industrial_warehouse",
+                "distribution": "industrial_distribution",
+                "distribution center": "industrial_distribution",
+                "manufacturing": "industrial_manufacturing",
+                "factory": "industrial_manufacturing",
+                "industrial": "industrial_manufacturing",
+                "flex": "industrial_flex",
+                "flex space": "industrial_flex",
+                "r&d": "industrial_r_and_d",
+                "research": "industrial_r_and_d",
+                "data center": "industrial_data_center",
+                "cold storage": "industrial_cold_storage",
+                "refrigerated": "industrial_cold_storage",
+                # Mixed-use types
+                "mixed use industrial": "mixed_use_industrial",
+                "mixed use commercial": "mixed_use_commercial"
             }
         ))
     

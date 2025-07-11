@@ -273,21 +273,43 @@ class ValidationEngine:
             field_name="property_type",
             rule_type=ValidationType.ENUM,
             allowed_values=[
-                "industrial", "warehouse", "manufacturing", "distribution",
-                "office", "retail", "mixed_use", "land", "other"
+                # Industrial types
+                "industrial_manufacturing",
+                "industrial_warehouse",
+                "industrial_distribution",
+                "industrial_flex",
+                "industrial_r_and_d",
+                "industrial_data_center",
+                "industrial_cold_storage",
+                # Mixed-use types
+                "mixed_use_industrial",
+                "mixed_use_commercial",
+                # Legacy types for backward compatibility
+                "industrial",
+                "warehouse",
+                "manufacturing",
+                "distribution"
             ],
-            severity=ValidationSeverity.WARNING,
-            description="Property type should be from standard list"
+            severity=ValidationSeverity.ERROR,
+            description="Property type must be a valid industrial category",
+            error_message="Invalid industrial property type"
         ))
         
         # Zoning validation
         self.add_rule(ValidationRule(
             name="zoning_format",
             field_name="zoning",
-            rule_type=ValidationType.PATTERN,
-            pattern=r'^[A-Z0-9\-]{1,10}$',
-            severity=ValidationSeverity.WARNING,
-            description="Zoning code format validation"
+            rule_type=ValidationType.ENUM,
+            allowed_values=[
+                "M1", "M2",  # Manufacturing zones
+                "I-1", "I-2",  # Industrial zones
+                "IL", "IG",  # Light/General Industrial
+                "IR", "IP",  # Research/Industrial Park
+                "IH"  # Heavy Industrial
+            ],
+            severity=ValidationSeverity.ERROR,
+            description="Industrial zoning code validation",
+            error_message="Invalid industrial zoning code"
         ))
         
         # Business rule: price per square foot reasonableness
@@ -310,6 +332,80 @@ class ValidationEngine:
             depends_on_fields=["square_footage"],
             severity=ValidationSeverity.WARNING,
             description="Lot size should be larger than building size"
+        ))
+
+        # Location verification
+        self.add_rule(ValidationRule(
+            name="location_coordinates",
+            field_name="latitude",
+            rule_type=ValidationType.RANGE,
+            min_value=-90,
+            max_value=90,
+            severity=ValidationSeverity.ERROR,
+            description="Latitude must be between -90 and 90 degrees"
+        ))
+
+        self.add_rule(ValidationRule(
+            name="longitude_range",
+            field_name="longitude",
+            rule_type=ValidationType.RANGE,
+            min_value=-180,
+            max_value=180,
+            severity=ValidationSeverity.ERROR,
+            description="Longitude must be between -180 and 180 degrees"
+        ))
+
+        # Data quality checks
+        self.add_rule(ValidationRule(
+            name="data_completeness",
+            field_name="data_quality_score",
+            rule_type=ValidationType.RANGE,
+            min_value=0,
+            max_value=1,
+            severity=ValidationSeverity.WARNING,
+            description="Data quality score must be between 0 and 1"
+        ))
+
+        self.add_rule(ValidationRule(
+            name="confidence_score",
+            field_name="confidence_score",
+            rule_type=ValidationType.RANGE,
+            min_value=0,
+            max_value=1,
+            severity=ValidationSeverity.WARNING,
+            description="Confidence score must be between 0 and 1"
+        ))
+
+        # Outlier detection for price
+        self.add_rule(ValidationRule(
+            name="price_outlier",
+            field_name="price",
+            rule_type=ValidationType.BUSINESS_RULE,
+            business_rule="validate_price_outlier",
+            depends_on_fields=["square_footage", "property_type", "zip_code"],
+            severity=ValidationSeverity.WARNING,
+            description="Price should be within reasonable range for property type and location"
+        ))
+
+        # Outlier detection for square footage
+        self.add_rule(ValidationRule(
+            name="sqft_outlier",
+            field_name="square_footage",
+            rule_type=ValidationType.BUSINESS_RULE,
+            business_rule="validate_sqft_outlier",
+            depends_on_fields=["property_type", "zip_code"],
+            severity=ValidationSeverity.WARNING,
+            description="Square footage should be within reasonable range for property type"
+        ))
+
+        # Suspicious record detection
+        self.add_rule(ValidationRule(
+            name="suspicious_record",
+            field_name="property_id",
+            rule_type=ValidationType.CUSTOM,
+            custom_function="validate_suspicious_record",
+            severity=ValidationSeverity.WARNING,
+            description="Check for suspicious or potentially fraudulent records"
         ))
     
     def add_rule(self, rule: ValidationRule):
@@ -717,39 +813,186 @@ class ValidationEngine:
         rule: ValidationRule,
         value: Any,
         data: Dict[str, Any]
-    ) -> ValidationResult:
-        """Apply business rule validation"""
-        is_valid = True
-        message = "Business rule validation passed"
-        
-        if rule.business_rule and rule.business_rule in self.business_rules:
-            try:
-                business_rule = self.business_rules[rule.business_rule]
-                result = business_rule(value, data, rule.depends_on_fields)
-                
-                if isinstance(result, bool):
-                    is_valid = result
-                    if not is_valid:
-                        message = f"Business rule '{rule.business_rule}' failed"
-                elif isinstance(result, dict):
-                    is_valid = result.get("valid", False)
-                    message = result.get("message", message)
-                    
-            except Exception as e:
-                is_valid = False
-                message = f"Business rule error: {str(e)}"
-        else:
-            is_valid = False
-            message = f"Business rule '{rule.business_rule}' not found"
-        
-        return ValidationResult(
-            rule_name=rule.name,
-            field_name=rule.field_name,
-            is_valid=is_valid,
-            severity=rule.severity,
-            message=message,
-            value=value
-        )
+    ) -> Optional[ValidationResult]:
+        """Validate business rules"""
+        if rule.business_rule == "validate_price_outlier":
+            return await self._validate_price_outlier(value, data, rule)
+        elif rule.business_rule == "validate_sqft_outlier":
+            return await self._validate_sqft_outlier(value, data, rule)
+        return None
+
+    async def _validate_price_outlier(
+        self,
+        price: float,
+        data: Dict[str, Any],
+        rule: ValidationRule
+    ) -> Optional[ValidationResult]:
+        """Validate if price is within reasonable range"""
+        try:
+            if not price or not data.get("square_footage"):
+                return None
+
+            price_per_sqft = price / data["square_footage"]
+            property_type = data.get("property_type", "")
+            zip_code = data.get("zip_code", "")
+
+            # Get typical ranges based on property type and location
+            ranges = await self._get_price_ranges(property_type, zip_code)
+            if not ranges:
+                return None
+
+            min_price = ranges["min_price_per_sqft"]
+            max_price = ranges["max_price_per_sqft"]
+
+            if price_per_sqft < min_price or price_per_sqft > max_price:
+                return ValidationResult(
+                    rule_name=rule.name,
+                    field_name=rule.field_name,
+                    is_valid=False,
+                    severity=rule.severity,
+                    message=f"Price per sqft (${price_per_sqft:.2f}) outside typical range (${min_price:.2f}-${max_price:.2f})",
+                    value=price_per_sqft
+                )
+
+        except Exception as e:
+            logger.warning("Price outlier validation failed", error=str(e))
+
+        return None
+
+    async def _validate_sqft_outlier(
+        self,
+        sqft: float,
+        data: Dict[str, Any],
+        rule: ValidationRule
+    ) -> Optional[ValidationResult]:
+        """Validate if square footage is within reasonable range"""
+        try:
+            if not sqft:
+                return None
+
+            property_type = data.get("property_type", "")
+            zip_code = data.get("zip_code", "")
+
+            # Get typical ranges based on property type and location
+            ranges = await self._get_sqft_ranges(property_type, zip_code)
+            if not ranges:
+                return None
+
+            min_sqft = ranges["min_sqft"]
+            max_sqft = ranges["max_sqft"]
+
+            if sqft < min_sqft or sqft > max_sqft:
+                return ValidationResult(
+                    rule_name=rule.name,
+                    field_name=rule.field_name,
+                    is_valid=False,
+                    severity=rule.severity,
+                    message=f"Square footage ({sqft:,.0f}) outside typical range ({min_sqft:,.0f}-{max_sqft:,.0f})",
+                    value=sqft
+                )
+
+        except Exception as e:
+            logger.warning("Square footage outlier validation failed", error=str(e))
+
+        return None
+
+    async def _get_price_ranges(
+        self,
+        property_type: str,
+        zip_code: str
+    ) -> Optional[Dict[str, float]]:
+        """Get typical price ranges for property type and location"""
+        # These would typically come from a database of market statistics
+        # For now using hardcoded reasonable ranges
+        base_ranges = {
+            "industrial_manufacturing": {"min": 50, "max": 300},
+            "industrial_warehouse": {"min": 40, "max": 250},
+            "industrial_distribution": {"min": 45, "max": 275},
+            "industrial_flex": {"min": 60, "max": 350},
+            "industrial_r_and_d": {"min": 80, "max": 400},
+            "industrial_data_center": {"min": 100, "max": 600},
+            "industrial_cold_storage": {"min": 70, "max": 450}
+        }
+
+        if property_type not in base_ranges:
+            return None
+
+        # Apply location factor (would come from market data)
+        location_factor = 1.0  # Default
+        # TODO: Implement location-based adjustment
+
+        ranges = base_ranges[property_type]
+        return {
+            "min_price_per_sqft": ranges["min"] * location_factor,
+            "max_price_per_sqft": ranges["max"] * location_factor
+        }
+
+    async def _get_sqft_ranges(
+        self,
+        property_type: str,
+        zip_code: str
+    ) -> Optional[Dict[str, float]]:
+        """Get typical square footage ranges for property type"""
+        # These would typically come from a database of market statistics
+        base_ranges = {
+            "industrial_manufacturing": {"min": 10000, "max": 1000000},
+            "industrial_warehouse": {"min": 20000, "max": 2000000},
+            "industrial_distribution": {"min": 50000, "max": 5000000},
+            "industrial_flex": {"min": 5000, "max": 500000},
+            "industrial_r_and_d": {"min": 10000, "max": 750000},
+            "industrial_data_center": {"min": 25000, "max": 1500000},
+            "industrial_cold_storage": {"min": 15000, "max": 1000000}
+        }
+
+        if property_type not in base_ranges:
+            return None
+
+        ranges = base_ranges[property_type]
+        return {
+            "min_sqft": ranges["min"],
+            "max_sqft": ranges["max"]
+        }
+
+    async def _validate_suspicious_record(
+        self,
+        property_id: str,
+        data: Dict[str, Any]
+    ) -> Optional[ValidationResult]:
+        """Check for suspicious or potentially fraudulent records"""
+        try:
+            suspicious_flags = []
+
+            # Check for unrealistic price/sqft ratio
+            if data.get("price") and data.get("square_footage"):
+                price_per_sqft = data["price"] / data["square_footage"]
+                if price_per_sqft < 1 or price_per_sqft > 10000:
+                    suspicious_flags.append("Extreme price per square foot")
+
+            # Check for unrealistic property attributes
+            if data.get("year_built"):
+                if data["year_built"] < 1800 or data["year_built"] > datetime.now().year + 5:
+                    suspicious_flags.append("Suspicious year built")
+
+            # Check for missing critical data
+            critical_fields = ["address", "property_type", "square_footage"]
+            missing_fields = [f for f in critical_fields if not data.get(f)]
+            if missing_fields:
+                suspicious_flags.append(f"Missing critical fields: {', '.join(missing_fields)}")
+
+            if suspicious_flags:
+                return ValidationResult(
+                    rule_name="suspicious_record",
+                    field_name="property_id",
+                    is_valid=False,
+                    severity=ValidationSeverity.WARNING,
+                    message=f"Suspicious record detected: {'; '.join(suspicious_flags)}",
+                    value=property_id
+                )
+
+        except Exception as e:
+            logger.warning("Suspicious record validation failed", error=str(e))
+
+        return None
     
     async def _validate_consistency(
         self,

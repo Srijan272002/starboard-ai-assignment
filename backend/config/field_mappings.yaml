@@ -1,370 +1,103 @@
-# Field Mappings Configuration
-# Maps county-specific field names to standardized field names
+# County API Field Mappings
 
-version: "1.0"
-last_updated: "2024-01-01T00:00:00Z"
+cook_county:
+  base_url: "https://datacatalog.cookcountyil.gov/api/v2"
+  auth_type: "api_key"
+  field_mappings:
+    property_id: "pin"
+    address: "property_address"
+    city: "municipality"
+    state: "IL"
+    zip_code: "zip"
+    property_type: "class"
+    land_area: "land_square_feet"
+    building_area: "building_square_feet"
+    year_built: "year_constructed"
+    assessed_value: "total_assessed_value"
+    last_sale_date: "last_sale_date"
+    last_sale_price: "last_sale_amount"
+    image_url: "property_image_url"
+    additional_images: "additional_images"
+  endpoints:
+    properties: "/resource/uzyt-m557.json"
+    assessments: "/resource/bcnw-s8k5.json"
+    sales: "/resource/wvhk-k5uv.json"
 
-# Standard field definitions
-standard_fields:
-  property_id:
-    type: "string"
-    required: true
-    description: "Unique property identifier"
-    
-  address:
-    type: "string"
-    required: true
-    description: "Property street address"
-    
-  city:
-    type: "string"
-    required: true
-    description: "City name"
-    
-  state:
-    type: "string" 
-    required: true
-    description: "State abbreviation"
-    
-  zip_code:
-    type: "string"
-    required: false
-    description: "ZIP or postal code"
-    
-  property_type:
-    type: "string"
-    required: false
-    description: "Type of property (industrial, warehouse, etc.)"
-    
-  zoning:
-    type: "string"
-    required: false
-    description: "Zoning classification"
-    
-  square_footage:
-    type: "float"
-    required: false
-    description: "Building square footage"
-    
-  lot_size:
-    type: "float"
-    required: false
-    description: "Lot size in square feet"
-    
-  year_built:
-    type: "integer"
-    required: false
-    description: "Year property was built"
-    
-  latitude:
-    type: "float"
-    required: false
-    description: "Latitude coordinate"
-    
-  longitude:
-    type: "float"
-    required: false
-    description: "Longitude coordinate"
-    
-  assessed_value:
-    type: "float"
-    required: false
-    description: "Assessed value for tax purposes"
-    
-  market_value:
-    type: "float"
-    required: false
-    description: "Estimated market value"
-    
-  tax_amount:
-    type: "float"
-    required: false
-    description: "Annual tax amount"
+dallas_county:
+  base_url: "https://www.dallascad.org/api"
+  auth_type: "oauth2"
+  field_mappings:
+    property_id: "account_number"
+    address: "situs_address"
+    city: "situs_city"
+    state: "TX"
+    zip_code: "situs_zip"
+    property_type: "state_code"
+    land_area: "land_size"
+    building_area: "total_area"
+    year_built: "year_built"
+    assessed_value: "assessed_val"
+    last_sale_date: "deed_date"
+    last_sale_price: "sale_price"
+    image_url: "property_photo_url"
+    additional_images: "photo_urls"
+  endpoints:
+    properties: "/property"
+    assessments: "/assessment"
+    sales: "/sales"
 
-# County-specific field mappings
-county_mappings:
-  cook:
-    # Cook County field mappings
-    property_id:
-      - "pin"
-      - "property_index_number"
-      - "parcel_id"
-      - "assessment_id"
-      
-    address:
-      - "property_address"
-      - "street_address"
-      - "site_address"
-      - "location"
-      
-    city:
-      - "property_city"
-      - "municipality"
-      - "township"
-      
-    zip_code:
-      - "zip"
-      - "zipcode"
-      - "postal_code"
-      
-    property_type:
-      - "property_class"
-      - "class_code"
-      - "use_code"
-      - "building_type"
-      
-    square_footage:
-      - "building_square_feet"
-      - "floor_area"
-      - "total_area"
-      - "sqft"
-      - "sq_ft"
-      
-    lot_size:
-      - "land_square_feet"
-      - "parcel_area"
-      - "lot_area"
-      - "site_area"
-      
-    year_built:
-      - "year_built"
-      - "construction_year"
-      - "built_year"
-      
-    assessed_value:
-      - "assessed_value"
-      - "assessment"
-      - "total_assessment"
-      - "tax_value"
-      
-    market_value:
-      - "market_value"
-      - "fair_market_value"
-      - "estimated_value"
-      
-    latitude:
-      - "lat"
-      - "latitude"
-      - "y_coord"
-      
-    longitude:
-      - "lng"
-      - "lon"
-      - "longitude"
-      - "x_coord"
+la_county:
+  base_url: "https://assessor.lacounty.gov/api/v1"
+  auth_type: "api_key"
+  field_mappings:
+    property_id: "ain"
+    address: "situs_street_address"
+    city: "situs_city"
+    state: "CA"
+    zip_code: "situs_zip_code"
+    property_type: "use_type"
+    land_area: "lot_size_sqft"
+    building_area: "improvement_size"
+    year_built: "year_built"
+    assessed_value: "total_value"
+    last_sale_date: "recording_date"
+    last_sale_price: "sale_amount"
+    image_url: "image_url"
+    additional_images: "image_urls"
+  endpoints:
+    properties: "/property-assessment"
+    assessments: "/assessment-roll"
+    sales: "/property-sales"
 
-  dallas:
-    # Dallas County field mappings
-    property_id:
-      - "account_number"
-      - "property_id"
-      - "parcel_number"
-      - "account_id"
-      
-    address:
-      - "property_address"
-      - "situs_address"
-      - "physical_address"
-      
-    city:
-      - "city"
-      - "jurisdiction"
-      - "municipal_code"
-      
-    zip_code:
-      - "zip_code"
-      - "postal_code"
-      
-    property_type:
-      - "property_type"
-      - "use_code_description"
-      - "property_class"
-      
-    square_footage:
-      - "building_area"
-      - "improvement_area"
-      - "structure_area"
-      
-    lot_size:
-      - "land_area"
-      - "acres"
-      - "lot_size"
-      
-    year_built:
-      - "year_built"
-      - "construction_date"
-      
-    assessed_value:
-      - "appraised_value"
-      - "total_value"
-      - "assessed_value"
-      
-    market_value:
-      - "market_value"
-      - "fair_market_value"
-
-  la:
-    # Los Angeles County field mappings  
-    property_id:
-      - "ain"
-      - "assessor_identification_number"
-      - "parcel_number"
-      
-    address:
-      - "situs_address"
-      - "property_location"
-      - "site_address"
-      
-    city:
-      - "situs_city"
-      - "city"
-      - "community"
-      
-    zip_code:
-      - "situs_zip"
-      - "zip_code"
-      
-    property_type:
-      - "use_type"
-      - "property_type"
-      - "use_code_description"
-      
-    square_footage:
-      - "building_square_feet"
-      - "living_square_feet"
-      - "structure_area"
-      
-    lot_size:
-      - "lot_size_square_feet"
-      - "land_value_per_square_foot"
-      - "lot_area"
-      
-    year_built:
-      - "year_built"
-      - "effective_year_built"
-      
-    assessed_value:
-      - "assessed_land_value"
-      - "assessed_improvement_value"
-      - "total_assessed_value"
-      
-    market_value:
-      - "market_value"
-      - "estimated_value"
-
-# Field normalization rules
-normalization_rules:
-  property_type:
-    # Standardize property type values
-    mappings:
-      "industrial": ["industrial", "manufacturing", "factory", "warehouse", "distribution"]
-      "warehouse": ["warehouse", "storage", "distribution center", "fulfillment"]
-      "manufacturing": ["manufacturing", "factory", "production", "assembly"]
-      "office": ["office", "commercial office", "business"]
-      "retail": ["retail", "store", "shopping"]
-      "mixed_use": ["mixed use", "mixed-use", "multi-use"]
-    
-  zoning:
-    # Standardize zoning codes
-    mappings:
-      "M1": ["m1", "M-1", "m-1", "light industrial"]
-      "M2": ["m2", "M-2", "m-2", "heavy industrial"] 
-      "M3": ["m3", "M-3", "m-3", "heavy manufacturing"]
-      "I1": ["i1", "I-1", "i-1", "light industrial"]
-      "I2": ["i2", "I-2", "i-2", "general industrial"]
-      "I3": ["i3", "I-3", "i-3", "heavy industrial"]
+# Common field types and validations
+field_types:
+  property_id: "string"
+  address: "string"
+  city: "string"
+  state: "string"
+  zip_code: "string"
+  property_type: "string"
+  land_area: "float"
+  building_area: "float"
+  year_built: "integer"
+  assessed_value: "float"
+  last_sale_date: "date"
+  last_sale_price: "float"
 
 # Data validation rules
 validation_rules:
-  square_footage:
-    min_value: 0
-    max_value: 10000000  # 10M sq ft
-    
-  lot_size:
-    min_value: 0
-    max_value: 1000000000  # 1B sq ft (for very large lots)
-    
   year_built:
-    min_value: 1800
-    max_value: 2030
-    
+    min: 1800
+    max: 2024
+  land_area:
+    min: 0
+    max: 10000000  # 10M sq ft
+  building_area:
+    min: 0
+    max: 5000000   # 5M sq ft
   assessed_value:
-    min_value: 0
-    max_value: 1000000000  # $1B
-    
-  market_value:
-    min_value: 0
-    max_value: 1000000000  # $1B
-    
-  latitude:
-    min_value: 24.0  # Southern tip of US
-    max_value: 49.0  # Northern border of US
-    
-  longitude:
-    min_value: -125.0  # West coast
-    max_value: -66.0   # East coast
-
-# Data transformation rules
-transformation_rules:
-  # Convert area measurements to square feet
-  area_conversions:
-    acres_to_sqft: 43560
-    hectares_to_sqft: 107639
-    
-  # Convert currency if needed
-  currency_conversions:
-    # Add specific currency conversion rules if APIs return different currencies
-    
-  # Unit standardizations
-  unit_standardizations:
-    square_footage:
-      - remove_commas: true
-      - convert_to_float: true
-      - unit: "sqft"
-    
-    lot_size:
-      - remove_commas: true
-      - convert_to_float: true
-      - convert_acres_to_sqft: true
-      - unit: "sqft"
-      
-    year_built:
-      - convert_to_int: true
-      - range_check: true
-      
-    monetary_fields:
-      - remove_currency_symbols: true
-      - remove_commas: true
-      - convert_to_float: true
-
-# Fuzzy matching configuration
-fuzzy_matching:
-  threshold: 0.8
-  algorithms:
-    - "levenshtein"
-    - "jaro_winkler" 
-    - "soundex"
-    
-# Data quality scoring weights
-quality_scoring:
-  essential_fields_weight: 0.6
-  important_fields_weight: 0.3
-  optional_fields_weight: 0.1
-  
-  essential_fields:
-    - "property_id"
-    - "address"
-    - "city"
-    - "county"
-    
-  important_fields:
-    - "property_type"
-    - "square_footage"
-    - "assessed_value"
-    
-  optional_fields:
-    - "year_built"
-    - "lot_size"
-    - "latitude"
-    - "longitude"
-    - "zoning" 
+    min: 0
+    max: 1000000000  # $1B
+  last_sale_price:
+    min: 0
+    max: 1000000000  # $1B 

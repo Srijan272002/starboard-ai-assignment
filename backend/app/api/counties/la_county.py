@@ -1,344 +1,361 @@
 """
-LA County API Implementation
+Los Angeles County API Integration
 """
 
-from typing import Dict, List, Optional, Any
-import structlog
+import yaml
 from datetime import datetime
+from typing import Dict, List, Optional, Any
+from pathlib import Path
+import os
 
-# from .base import BaseCountyAPI  # Simplified for now
-from app.api.discovery.authentication import AuthType
-from app.db.models import StandardizedProperty, PropertySearchParams
+import structlog
+from pydantic import BaseModel
+
+from ..discovery.api_analyzer import APIAnalyzer
+from ..discovery.authentication import AuthenticationHandler
+from ..discovery.rate_limiter import RateLimiter
+from .base import CountyAPI, PropertyData
+from app.core.config import settings
 
 logger = structlog.get_logger(__name__)
 
 
-class LACountyAPI:
-    """LA County property data API implementation"""
+class LACountyAPI(CountyAPI):
+    """Los Angeles County API implementation"""
     
     def __init__(self):
-        self.county_name = "la"
-        self.base_url = "https://data.lacounty.gov/resource/"
-        self.api_endpoints = {
-            "properties": "9trm-uz8i.json",  # Example Socrata dataset ID
-            "assessments": "roll-ap6t.json",
-            "sales": "sales-data.json"
-        }
-        
-        # Initialize discovery components
-        from app.api.discovery import APIAnalyzer, AuthenticationHandler, RateLimiter
-        from app.api.standardization import FieldMapper, DataValidator, DataTransformer
-        
+        super().__init__("la_county")
         self.api_analyzer = APIAnalyzer()
         self.auth_handler = AuthenticationHandler()
         self.rate_limiter = RateLimiter()
-        self.field_mapper = FieldMapper()
-        self.data_validator = DataValidator()
-        self.data_transformer = DataTransformer()
         
-        # Configure authentication for LA County
-        self.auth_config = self.auth_handler.create_auth_config(
-            auth_type=AuthType.API_KEY,
-            county="la",
-            api_key_header="X-App-Token"
+        # Load configuration
+        current_dir = Path(__file__).resolve().parent
+        # Navigate up to the backend directory (not the project root)
+        backend_dir = current_dir.parent.parent.parent
+        config_path = backend_dir / "config" / "field_mappings.yaml"
+        
+        if not config_path.exists():
+            raise FileNotFoundError(f"Configuration file not found: {config_path}")
+            
+        with open(config_path) as f:
+            self.config = yaml.safe_load(f)["la_county"]
+            
+        # Configure API components
+        self.base_url = self.config["base_url"]
+        self.endpoints = self.config["endpoints"]
+        self.field_mappings = self.config["field_mappings"]
+        
+        # Set up rate limiting
+        self.rate_limiter.configure_rate_limit(
+            "la_county",
+            county="los_angeles"
         )
         
-        logger.info("LA County API initialized")
-    
-    async def make_request(self, endpoint: str, params: dict = None):
-        """Make HTTP request to county API"""
-        import httpx
-        
-        url = f"{self.base_url}{self.api_endpoints.get(endpoint, endpoint)}"
-        headers = await self.auth_handler.get_auth_headers(self.auth_config)
-        auth_params = await self.auth_handler.get_auth_params(self.auth_config)
-        
-        # Merge auth params with request params
-        all_params = {**(params or {}), **auth_params}
+    async def initialize(self):
+        """Initialize API connection and verify access"""
+        logger.info("Initializing LA County API connection")
         
         try:
-            async with httpx.AsyncClient(timeout=30) as client:
-                response = await client.get(url, headers=headers, params=all_params)
-                response.raise_for_status()
-                return response.json()
-        except Exception as e:
-            logger.error("API request failed", 
-                        county=self.county_name,
-                        endpoint=endpoint,
-                        error=str(e))
-            return None
-    
-    async def search_properties(
-        self,
-        params: PropertySearchParams
-    ) -> List[StandardizedProperty]:
-        """
-        Search for properties in LA County
-        
-        Args:
-            params: Search parameters
-            
-        Returns:
-            List of standardized properties
-        """
-        try:
-            # Build query parameters for LA County API
-            query_params = await self._build_la_county_query(params)
-            
-            # Make the API request
-            endpoint = "properties"
-            raw_data = await self.make_request(endpoint, query_params)
-            
-            if not raw_data:
-                return []
-            
-            # Process and standardize the data
-            standardized_properties = []
-            for raw_property in raw_data:
-                try:
-                    standardized_property = await self._standardize_la_county_property(raw_property)
-                    if standardized_property:
-                        standardized_properties.append(standardized_property)
-                except Exception as e:
-                    logger.warning("Failed to standardize LA County property", 
-                                  property_data=raw_property,
-                                  error=str(e))
-                    continue
-            
-            logger.info("LA County properties retrieved", 
-                       count=len(standardized_properties))
-            
-            return standardized_properties
-            
-        except Exception as e:
-            logger.error("LA County property search failed", 
-                        params=params.dict(),
-                        error=str(e))
-            return []
-    
-    async def _build_la_county_query(
-        self,
-        params: PropertySearchParams
-    ) -> Dict[str, Any]:
-        """Build query parameters for LA County API"""
-        query = {}
-        
-        # Add limit
-        if params.limit:
-            query["$limit"] = min(params.limit, 2000)  # LA County API limit
-        
-        # Add offset
-        if params.offset:
-            query["$offset"] = params.offset
-        
-        # Build WHERE clause conditions
-        where_conditions = []
-        
-        # Property type filter
-        if params.property_type:
-            # Map to LA County property type values
-            la_county_types = {
-                "warehouse": ["warehouse", "distribution center", "storage"],
-                "industrial": ["industrial", "manufacturing", "factory"],
-                "office": ["office", "commercial office"],
-                "retail": ["retail", "commercial retail"],
-                "flex_space": ["flex", "mixed use"]
-            }
-            
-            county_types = la_county_types.get(params.property_type, [params.property_type])
-            if county_types:
-                type_conditions = " OR ".join([f"use_code_description ILIKE '%{t}%'" for t in county_types])
-                where_conditions.append(f"({type_conditions})")
-        
-        # Size filter
-        if params.min_size:
-            where_conditions.append(f"square_footage >= {params.min_size}")
-        if params.max_size:
-            where_conditions.append(f"square_footage <= {params.max_size}")
-        
-        # Price filter
-        if params.min_price:
-            where_conditions.append(f"assessed_value >= {params.min_price}")
-        if params.max_price:
-            where_conditions.append(f"assessed_value <= {params.max_price}")
-        
-        # Location filter (ZIP code)
-        if params.zip_code:
-            where_conditions.append(f"mail_zip_code='{params.zip_code}'")
-        
-        # Combine WHERE conditions
-        if where_conditions:
-            query["$where"] = " AND ".join(where_conditions)
-        
-        # Add ordering
-        query["$order"] = "assessed_value DESC"
-        
-        return query
-    
-    async def _standardize_la_county_property(
-        self,
-        raw_property: Dict[str, Any]
-    ) -> Optional[StandardizedProperty]:
-        """
-        Standardize an LA County property record
-        
-        Args:
-            raw_property: Raw property data from LA County API
-            
-        Returns:
-            Standardized property or None if processing fails
-        """
-        try:
-            # Map and normalize fields using field mapper
-            mapped_data = self.field_mapper.map_fields(raw_property, "la")
-            
-            # Validate the mapped data
-            validation_results = self.data_validator.validate_data(mapped_data)
-            
-            # Transform the data
-            transformed_data = self.data_transformer.transform_data(mapped_data)
-            
-            # Create standardized property
-            standardized_property = StandardizedProperty(
-                property_id=transformed_data.get("property_id") or transformed_data.get("ain", ""),
-                source="la_county",
-                address=transformed_data.get("address", ""),
-                city=transformed_data.get("city", ""),
-                state="CA",
-                zip_code=transformed_data.get("zip_code", ""),
-                county="Los Angeles",
-                property_type=transformed_data.get("property_type", "unknown"),
-                square_feet=self._safe_float(transformed_data.get("square_feet")),
-                price=self._safe_float(transformed_data.get("price") or transformed_data.get("assessed_value")),
-                price_per_sqft=self._safe_float(transformed_data.get("price_per_sqft")),
-                year_built=self._safe_int(transformed_data.get("year_built")),
-                latitude=self._safe_float(transformed_data.get("latitude")),
-                longitude=self._safe_float(transformed_data.get("longitude")),
-                description=transformed_data.get("description", ""),
-                listing_url=transformed_data.get("listing_url"),
-                contact_info=transformed_data.get("contact_info"),
-                last_updated=datetime.utcnow(),
-                raw_data=raw_property,
-                data_quality_score=self.data_validator.get_data_quality_score(validation_results)
+            # Analyze API
+            analysis = await self.api_analyzer.discover_api(
+                self.base_url,
+                "la_county"
             )
             
-            return standardized_property
+            # Validate endpoints
+            for endpoint_name, endpoint_path in self.endpoints.items():
+                if not any(ep.url.endswith(endpoint_path) for ep in analysis.discovered_endpoints):
+                    logger.warning(
+                        "Endpoint not found in API discovery",
+                        endpoint_name=endpoint_name,
+                        endpoint_path=endpoint_path
+                    )
+            
+            # Set up authentication - make it optional for development
+            try:
+                auth_config = self.auth_handler.get_county_auth_config("los_angeles")
+                test_url = f"{self.base_url}{self.endpoints['properties']}"
+                
+                if not await self.auth_handler.validate_authentication(auth_config, test_url):
+                    logger.warning("LA County API authentication failed. Some features may not work correctly.")
+            except Exception as auth_error:
+                logger.warning(
+                    "LA County API authentication setup failed. Running in development mode.",
+                    error=str(auth_error)
+                )
+                
+            logger.info("LA County API initialized successfully")
             
         except Exception as e:
-            logger.error("LA County property standardization failed", 
-                        raw_property=raw_property,
-                        error=str(e))
-            return None
-    
-    def _safe_float(self, value: Any) -> Optional[float]:
-        """Safely convert value to float"""
-        try:
-            if value is None or value == "":
-                return None
-            return float(value)
-        except (ValueError, TypeError):
-            return None
-    
-    def _safe_int(self, value: Any) -> Optional[int]:
-        """Safely convert value to int"""
-        try:
-            if value is None or value == "":
-                return None
-            return int(float(value))
-        except (ValueError, TypeError):
-            return None
-    
-    async def get_property_details(
-        self,
-        property_id: str
-    ) -> Optional[StandardizedProperty]:
-        """
-        Get detailed information for a specific property
-        
-        Args:
-            property_id: Property identifier (AIN)
+            logger.error("Failed to initialize LA County API", error=str(e))
+            # Don't raise the exception to allow the application to start
+            # raise
             
-        Returns:
-            Detailed property information or None
-        """
+    async def get_property(self, property_id: str) -> Optional[PropertyData]:
+        """Get property data by ID"""
         try:
-            # Query for specific property
-            query_params = {
-                "$where": f"ain='{property_id}'",
-                "$limit": 1
+            # Check rate limit
+            await self.rate_limiter.wait_if_needed("la_county")
+            
+            # Get auth headers
+            auth_config = self.auth_handler.get_county_auth_config("los_angeles")
+            headers = await self.auth_handler.get_auth_headers(auth_config)
+            
+            # Make request
+            url = f"{self.base_url}{self.endpoints['properties']}"
+            params = {
+                "ain": property_id
             }
             
-            raw_data = await self.make_request("properties", query_params)
-            
-            if raw_data and len(raw_data) > 0:
-                return await self._standardize_la_county_property(raw_data[0])
-            
+            async with self.client as client:
+                response = await client.get(url, headers=headers, params=params)
+                response.raise_for_status()
+                
+                data = response.json()
+                if not data:
+                    return None
+                    
+                # Map fields
+                property_data = self._map_property_data(data)
+                
+                # Get additional data
+                assessment_data = await self._get_assessment_data(property_id)
+                sales_data = await self._get_sales_data(property_id)
+                
+                if assessment_data:
+                    property_data.update(assessment_data)
+                if sales_data:
+                    property_data.update(sales_data)
+                    
+                return PropertyData(**property_data)
+                
+        except Exception as e:
+            logger.error(
+                "Failed to get LA County property",
+                property_id=property_id,
+                error=str(e)
+            )
             return None
             
+    async def search_properties(
+        self,
+        filters: Dict[str, Any] = None,
+        limit: int = 100
+    ) -> List[PropertyData]:
+        """Search for properties with filters"""
+        try:
+            # Check rate limit
+            await self.rate_limiter.wait_if_needed("la_county")
+            
+            # Get auth headers
+            try:
+                auth_config = self.auth_handler.get_county_auth_config("los_angeles")
+                headers = await self.auth_handler.get_auth_headers(auth_config)
+            except Exception as auth_error:
+                logger.error(
+                    "Authentication failed when attempting to access LA County API",
+                    error=str(auth_error)
+                )
+                # Check if we're forcing real API usage
+                if settings.REAL_API_REQUIRED:
+                    raise Exception("Real API access is required but authentication failed: " + str(auth_error))
+                else:
+                    # Only use mock data if explicitly allowed
+                    if settings.ENVIRONMENT == "development" and settings.ALLOW_MOCK_DATA:
+                        logger.warning("Using mock data as fallback in development mode")
+                        return self._get_mock_properties(limit)
+                    else:
+                        # In production or when mock data is not allowed, we should fail properly
+                        raise
+            
+            # Build query
+            where_clauses = []
+            if filters:
+                for key, value in filters.items():
+                    field = self.field_mappings.get(key)
+                    if field:
+                        if isinstance(value, str):
+                            where_clauses.append(f"{field}='{value}'")
+                        else:
+                            where_clauses.append(f"{field}={value}")
+                            
+            # Make request
+            url = f"{self.base_url}{self.endpoints['properties']}"
+            params = {
+                "$where": " AND ".join(where_clauses) if where_clauses else None,
+                "$limit": limit
+            }
+            
+            async with self.client as client:
+                response = await client.get(url, headers=headers, params=params)
+                response.raise_for_status()
+                
+                data = response.json()
+                
+                # Map results
+                properties = []
+                for item in data:
+                    try:
+                        property_data = self._map_property_data(item)
+                        properties.append(PropertyData(**property_data))
+                    except Exception as e:
+                        logger.warning(
+                            "Failed to parse property data",
+                            error=str(e),
+                            data=item
+                        )
+                        continue
+                        
+                return properties
+                
         except Exception as e:
-            logger.error("LA County property details failed", 
-                        property_id=property_id,
-                        error=str(e))
+            logger.error(
+                "Failed to search LA County properties",
+                filters=filters,
+                error=str(e)
+            )
+            # Only use mock data if explicitly allowed and not in production
+            if settings.ENVIRONMENT == "development" and settings.ALLOW_MOCK_DATA and not settings.REAL_API_REQUIRED:
+                logger.info("Returning mock data in development mode")
+                return self._get_mock_properties(limit)
+            # Otherwise, propagate the error
+            raise Exception(f"Failed to fetch real property data from LA County API: {str(e)}")
+            
+    async def _get_assessment_data(self, property_id: str) -> Optional[Dict[str, Any]]:
+        """Get assessment data for a property"""
+        try:
+            # Check rate limit
+            await self.rate_limiter.wait_if_needed("la_county")
+            
+            # Get auth headers
+            auth_config = self.auth_handler.get_county_auth_config("los_angeles")
+            headers = await self.auth_handler.get_auth_headers(auth_config)
+            
+            # Make request
+            url = f"{self.base_url}{self.endpoints['assessments']}"
+            params = {
+                "ain": property_id,
+                "format": "json"
+            }
+            
+            async with self.client as client:
+                response = await client.get(url, headers=headers, params=params)
+                response.raise_for_status()
+                
+                data = response.json()
+                if not data:
+                    return None
+                    
+                return self._map_assessment_data(data)
+                
+        except Exception as e:
+            logger.error(
+                "Failed to get assessment data",
+                property_id=property_id,
+                error=str(e)
+            )
             return None
-    
-    async def get_available_filters(self) -> Dict[str, List[str]]:
-        """Get available filter values for LA County"""
+            
+    async def _get_sales_data(self, property_id: str) -> Optional[Dict[str, Any]]:
+        """Get sales history for a property"""
         try:
-            # Get distinct values for common filter fields
-            filters = {}
+            # Check rate limit
+            await self.rate_limiter.wait_if_needed("la_county")
             
-            # Property types
-            type_query = {"$select": "DISTINCT use_code_description", "$limit": 100}
-            type_data = await self.make_request("properties", type_query)
-            if type_data:
-                filters["property_types"] = [
-                    item.get("use_code_description") 
-                    for item in type_data 
-                    if item.get("use_code_description")
-                ]
+            # Get auth headers
+            auth_config = self.auth_handler.get_county_auth_config("los_angeles")
+            headers = await self.auth_handler.get_auth_headers(auth_config)
             
-            # ZIP codes
-            zip_query = {"$select": "DISTINCT mail_zip_code", "$limit": 500}
-            zip_data = await self.make_request("properties", zip_query)
-            if zip_data:
-                filters["zip_codes"] = [
-                    item.get("mail_zip_code") 
-                    for item in zip_data 
-                    if item.get("mail_zip_code") and len(str(item.get("mail_zip_code", ""))) == 5
-                ]
+            # Make request
+            url = f"{self.base_url}{self.endpoints['sales']}"
+            params = {
+                "ain": property_id,
+                "format": "json"
+            }
             
-            # Cities
-            city_query = {"$select": "DISTINCT situs_city", "$limit": 200}
-            city_data = await self.make_request("properties", city_query)
-            if city_data:
-                filters["cities"] = [
-                    item.get("situs_city") 
-                    for item in city_data 
-                    if item.get("situs_city")
-                ]
-            
-            return filters
-            
+            async with self.client as client:
+                response = await client.get(url, headers=headers, params=params)
+                response.raise_for_status()
+                
+                data = response.json()
+                if not data:
+                    return None
+                    
+                return self._map_sales_data(data)
+                
         except Exception as e:
-            logger.error("LA County filters retrieval failed", error=str(e))
-            return {}
-    
-    async def test_connection(self) -> bool:
-        """Test connection to LA County API"""
-        try:
-            # Make a simple test request
-            test_params = {"$limit": 1}
-            result = await self.make_request("properties", test_params)
+            logger.error(
+                "Failed to get sales data",
+                property_id=property_id,
+                error=str(e)
+            )
+            return None
             
-            success = result is not None
+    def _map_property_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Map raw property data to standardized fields"""
+        mapped_data = {}
+        
+        for target_field, source_field in self.field_mappings.items():
+            if source_field in data:
+                mapped_data[target_field] = data[source_field]
+                
+        return mapped_data
+        
+    def _map_assessment_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Map assessment data to standardized fields"""
+        return {
+            "assessed_value": float(data.get("total_value", 0)),
+            "assessment_year": int(data.get("assessment_year", datetime.now().year))
+        }
+        
+    def _map_sales_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Map sales data to standardized fields"""
+        return {
+            "last_sale_date": data.get("recording_date"),
+            "last_sale_price": float(data.get("sale_amount", 0))
+        } 
+
+    def _get_mock_properties(self, limit: int = 10) -> List[PropertyData]:
+        """Generate mock property data for development"""
+        import random
+        from datetime import datetime, timedelta
+        
+        mock_properties = []
+        
+        # Property types
+        property_types = ["Residential", "Commercial", "Industrial", "Land"]
+        
+        # Street names
+        streets = ["Main St", "Sunset Blvd", "Hollywood Blvd", "Wilshire Blvd", "Venice Blvd"]
+        
+        # Cities
+        cities = ["Los Angeles", "Santa Monica", "Pasadena", "Beverly Hills", "Long Beach"]
+        
+        # Generate random properties
+        for i in range(min(limit, 20)):  # Cap at 20 mock properties
+            # Generate a random date in the past 5 years
+            days_back = random.randint(1, 365 * 5)
+            sale_date = (datetime.now() - timedelta(days=days_back)).strftime("%Y-%m-%d")
             
-            if success:
-                logger.info("LA County API connection test successful")
-            else:
-                logger.warning("LA County API connection test failed")
+            # Generate a random property
+            property_data = {
+                "property_id": f"MOCK-{i+1:06d}",
+                "address": f"{random.randint(100, 9999)} {random.choice(streets)}",
+                "city": random.choice(cities),
+                "state": "CA",
+                "zip_code": f"900{random.randint(10, 99)}",
+                "property_type": random.choice(property_types),
+                "land_area": round(random.uniform(0.1, 2.0), 2),
+                "building_area": round(random.uniform(1000, 5000), 0),
+                "year_built": random.randint(1950, 2020),
+                "assessed_value": round(random.uniform(100000, 1000000), 0),
+                "last_sale_date": sale_date,
+                "last_sale_price": round(random.uniform(200000, 2000000), 0),
+                "raw_data": {"mock": True},
+                "last_updated": datetime.utcnow()
+            }
             
-            return success
+            mock_properties.append(PropertyData(**property_data))
             
-        except Exception as e:
-            logger.error("LA County API connection test error", error=str(e))
-            return False 
+        return mock_properties 

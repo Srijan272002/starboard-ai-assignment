@@ -1,113 +1,138 @@
-from typing import List, Optional, Dict, Any, Union
-from pydantic import validator
+"""
+Application configuration
+"""
+
+from typing import List, Optional
 from pydantic_settings import BaseSettings
-import os
-import json
+from pathlib import Path
+
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "Starboard AI"
-    VERSION: str = "1.0.0"
-    API_V1_STR: str = "/api/v1"
+    """Application settings"""
     
-    # Database
-    DATABASE_URL: Optional[str] = None
+    # Logging Settings
+    LOG_LEVEL: str = "INFO"
+    
+    # API Settings
+    API_V1_STR: str = "/api/v1"
+    PROJECT_NAME: str = "Starboard Property Analysis"
+    
+    # CORS Settings
+    BACKEND_CORS_ORIGINS: str = "http://localhost:3000,http://localhost:8000"
+    CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8000"]
+    
+    # Database Settings
     POSTGRES_SERVER: str = "localhost"
     POSTGRES_USER: str = "starboard"
     POSTGRES_PASSWORD: str = "password"
     POSTGRES_DB: str = "starboard_db"
+    DATABASE_URL: Optional[str] = None
     
-    @validator("DATABASE_URL", pre=True)
-    def assemble_db_connection(cls, v: Optional[str], values: dict) -> str:
-        if isinstance(v, str):
-            return v
-        return f"postgresql://{values.get('POSTGRES_USER')}:{values.get('POSTGRES_PASSWORD')}@{values.get('POSTGRES_SERVER')}/{values.get('POSTGRES_DB')}"
+    # Redis Settings
+    REDIS_URL: str = ""
+    RATE_LIMIT_REDIS_URL: str = ""  # Will use REDIS_URL if not set
     
-    # CORS
-    BACKEND_CORS_ORIGINS: Union[str, List[str]] = ["http://localhost:3000", "http://localhost:8000"]
+    # County API URLs
+    COOK_COUNTY_API_URL: str = "https://datacatalog.cook...resource/93st-4bxh.json"
+    DALLAS_COUNTY_API_URL: str = "https://docs.google.com/...stgovk/edit?usp=sharing"
+    LA_COUNTY_API_URL: str = "https://docs.google.com/...mOo-Mg/edit?usp=sharing"
     
-    @validator("BACKEND_CORS_ORIGINS", pre=True)
-    def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
-        if isinstance(v, str):
-            try:
-                # Try to parse as JSON first
-                return json.loads(v)
-            except json.JSONDecodeError:
-                # If not JSON, try comma-separated string
-                return [i.strip() for i in v.split(",") if i.strip()]
-        return v
+    # County API Keys
+    COOK_COUNTY_API_KEY: str = ""
+    DALLAS_COUNTY_API_KEY: str = ""
+    LA_COUNTY_API_KEY: str = ""
+    API_KEY_HEADER: str = "X-API-KEY"
     
-    # API Configuration
-    COOK_COUNTY_API_URL: str = "https://datacatalog.cookcountyil.gov/resource/"
-    DALLAS_COUNTY_API_URL: str = "https://www.dallascounty.org/departments/tax/"
-    LA_COUNTY_API_URL: str = "https://portal.assessor.lacounty.gov/"
+    # API Data Settings
+    REAL_API_REQUIRED: bool = True  # If True, will fail if real API data cannot be fetched
+    ALLOW_MOCK_DATA: bool = False   # If True, allows mock data as fallback in development
     
-    # API Discovery Configuration
-    API_DISCOVERY_ENABLED: bool = True
-    API_HEALTH_CHECK_INTERVAL: int = 300  # seconds
-    API_DOCUMENTATION_PATH: str = "api_docs"
-    AUTO_API_CATALOGING: bool = True
-    
-    # County-specific API settings
-    COOK_COUNTY_API_KEY: Optional[str] = None
-    COOK_COUNTY_RATE_LIMIT: int = 1000  # requests per hour
-    COOK_COUNTY_BATCH_SIZE: int = 100
-    
-    DALLAS_COUNTY_API_KEY: Optional[str] = None
-    DALLAS_COUNTY_RATE_LIMIT: int = 500  # requests per hour
-    DALLAS_COUNTY_BATCH_SIZE: int = 50
-    
-    LA_COUNTY_API_KEY: Optional[str] = None
-    LA_COUNTY_RATE_LIMIT: int = 2000  # requests per hour
-    LA_COUNTY_BATCH_SIZE: int = 200
-    
-    # Rate Limiting
-    DEFAULT_RATE_LIMIT: int = 100  # requests per minute
-    RATE_LIMIT_STRATEGY: str = "sliding_window"  # sliding_window, fixed_window, token_bucket
-    RATE_LIMIT_REDIS_URL: Optional[str] = "redis://localhost:6379/0"
-    
-    # Authentication
-    API_KEY_HEADER: str = "X-API-Key"
-    JWT_SECRET_KEY: Optional[str] = None
+    # JWT Settings
+    JWT_SECRET_KEY: str = "starboard_secret_key_change_in_production"
     JWT_ALGORITHM: str = "HS256"
-    JWT_EXPIRE_MINUTES: int = 30
+    JWT_EXPIRE_MINUTES: int = 60
     
-    # Field Standardization
-    FIELD_MAPPING_CONFIG_PATH: str = "config/field_mappings.yaml"
-    FUZZY_MATCH_THRESHOLD: float = 0.8
-    DATA_QUALITY_THRESHOLD: float = 0.7
-    ENABLE_FIELD_NORMALIZATION: bool = True
-    ENABLE_TYPE_VALIDATION: bool = True
+    # API Rate Limits (requests per minute)
+    DEFAULT_RATE_LIMIT: int = 100
+    COOK_COUNTY_RATE_LIMIT: int = 60
+    DALLAS_COUNTY_RATE_LIMIT: int = 60
+    LA_COUNTY_RATE_LIMIT: int = 60
     
-    # Data Processing
-    MAX_CONCURRENT_REQUESTS: int = 10
-    REQUEST_TIMEOUT: int = 30
+    # API Timeouts (seconds)
+    REQUEST_TIMEOUT: float = 30.0
     MAX_RETRIES: int = 3
-    RETRY_BACKOFF_FACTOR: float = 1.5
+    RETRY_DELAY: float = 1.0
+    MAX_CONCURRENT_REQUESTS: int = 10  # Maximum number of concurrent requests
     
     # Batch Processing
-    BATCH_PROCESSING_ENABLED: bool = True
-    BATCH_SIZE: int = 100
-    BATCH_TIMEOUT: int = 300
+    MAX_BATCH_SIZE: int = 100
+    BATCH_TIMEOUT: float = 30.0
     
-    # Data Quality
-    ENABLE_DATA_QUALITY_CHECKS: bool = True
-    MISSING_DATA_THRESHOLD: float = 0.5  # Allow up to 50% missing data
-    DATA_COMPLETENESS_SCORE_WEIGHT: float = 0.4
-    DATA_ACCURACY_SCORE_WEIGHT: float = 0.6
+    # Health Monitoring
+    HEALTH_CHECK_INTERVAL: int = 300  # 5 minutes
     
-    # Logging
-    LOG_LEVEL: str = "INFO"
-    ENABLE_API_LOGGING: bool = True
-    LOG_API_REQUESTS: bool = True
-    LOG_API_RESPONSES: bool = False  # Set to True for debugging
+    # API Documentation
+    API_DOCUMENTATION_PATH: str = "./api_docs"
     
-    # Cache Configuration
-    ENABLE_CACHING: bool = True
-    CACHE_TTL: int = 3600  # 1 hour
-    REDIS_URL: Optional[str] = "redis://localhost:6379/1"
+    # Field Mapping
+    FIELD_MAPPING_CONFIG_PATH: str = "./config/field_mappings.yaml"
+    FUZZY_MATCH_THRESHOLD: float = 0.8  # 80% similarity for fuzzy matching
+    
+    # Data Storage Settings
+    BACKUP_DIRECTORY: str = "./data/backups"
+    ARCHIVE_DIRECTORY: str = "./data/archives"
+    ARCHIVE_RETENTION_DAYS: int = 3650  # 10 years default retention
+    
+    # Backup Settings
+    DAILY_BACKUP_RETENTION_DAYS: int = 7
+    WEEKLY_BACKUP_RETENTION_DAYS: int = 30
+    MONTHLY_BACKUP_RETENTION_DAYS: int = 365
+    
+    # External APIs
+    GEOCODING_API_KEY: str = ""
+    MARKET_DATA_API_KEY: str = ""
+    
+    # Environment
+    ENVIRONMENT: str = "development"  # development, staging, production
     
     class Config:
         env_file = ".env"
         case_sensitive = True
+    
+    @property
+    def get_database_url(self) -> str:
+        """
+        Construct database URL from components if not explicitly provided
+        """
+        if self.DATABASE_URL:
+            return self.DATABASE_URL
+        
+        # Default to SQLite for development if PostgreSQL settings not provided
+        if not all([self.POSTGRES_SERVER, self.POSTGRES_USER, self.POSTGRES_DB]):
+            return "sqlite:///./starboard.db"
+        
+        # Construct PostgreSQL URL
+        password_str = f":{self.POSTGRES_PASSWORD}" if self.POSTGRES_PASSWORD else ""
+        return f"postgresql://{self.POSTGRES_USER}{password_str}@{self.POSTGRES_SERVER}/{self.POSTGRES_DB}"
+        
+    def get_cors_origins(self) -> List[str]:
+        """Return the list of allowed CORS origins"""
+        if self.BACKEND_CORS_ORIGINS:
+            # Parse comma-separated string of origins
+            origins = [origin.strip() for origin in self.BACKEND_CORS_ORIGINS.split(",") if origin.strip()]
+            # Use explicit list if provided, otherwise use parsed origins
+            return origins if origins else self.CORS_ORIGINS
+        return self.CORS_ORIGINS
 
-settings = Settings() 
+
+# Create global settings instance
+settings = Settings()
+
+
+# Helper function to get absolute path
+def get_absolute_path(relative_path: str) -> Path:
+    """Convert relative path to absolute path"""
+    path = Path(relative_path)
+    if path.is_absolute():
+        return path
+    return Path.cwd() / path 

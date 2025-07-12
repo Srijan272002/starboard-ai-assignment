@@ -1,0 +1,120 @@
+api_name: la_county
+authentication:
+  headers: []
+  parameters: []
+  required: false
+  type: none
+base_url: https://assessor.lacounty.gov/api/v1
+contact_info: null
+data_schema:
+  fields: []
+  patterns: {}
+  sample_data: {}
+  types: {}
+endpoints:
+- authentication_required: false
+  data_fields: []
+  description: 'Common endpoint pattern: /api/v1/properties'
+  headers: {}
+  method: GET
+  parameters: {}
+  rate_limit: null
+  response_schema: null
+  url: https://assessor.lacounty.gov/api/v1/properties
+- authentication_required: false
+  data_fields: []
+  description: 'Common endpoint pattern: /api/properties'
+  headers: {}
+  method: GET
+  parameters: {}
+  rate_limit: null
+  response_schema: null
+  url: https://assessor.lacounty.gov/api/properties
+- authentication_required: false
+  data_fields: []
+  description: 'Common endpoint pattern: /properties'
+  headers: {}
+  method: GET
+  parameters: {}
+  rate_limit: null
+  response_schema: null
+  url: https://assessor.lacounty.gov/properties
+- authentication_required: false
+  data_fields: []
+  description: 'Common endpoint pattern: /data/properties'
+  headers: {}
+  method: GET
+  parameters: {}
+  rate_limit: null
+  response_schema: null
+  url: https://assessor.lacounty.gov/data/properties
+- authentication_required: false
+  data_fields: []
+  description: 'Common endpoint pattern: /parcels'
+  headers: {}
+  method: GET
+  parameters: {}
+  rate_limit: null
+  response_schema: null
+  url: https://assessor.lacounty.gov/parcels
+- authentication_required: false
+  data_fields: []
+  description: 'Common endpoint pattern: /assessments'
+  headers: {}
+  method: GET
+  parameters: {}
+  rate_limit: null
+  response_schema: null
+  url: https://assessor.lacounty.gov/assessments
+- authentication_required: false
+  data_fields: []
+  description: 'Common endpoint pattern: /real-estate'
+  headers: {}
+  method: GET
+  parameters: {}
+  rate_limit: null
+  response_schema: null
+  url: https://assessor.lacounty.gov/real-estate
+- authentication_required: false
+  data_fields: []
+  description: 'Common endpoint pattern: /property-data'
+  headers: {}
+  method: GET
+  parameters: {}
+  rate_limit: null
+  response_schema: null
+  url: https://assessor.lacounty.gov/property-data
+- authentication_required: false
+  data_fields: []
+  description: 'Common endpoint pattern: /api/v1/search'
+  headers: {}
+  method: GET
+  parameters: {}
+  rate_limit: null
+  response_schema: null
+  url: https://assessor.lacounty.gov/api/v1/search
+- authentication_required: false
+  data_fields: []
+  description: 'Common endpoint pattern: /search'
+  headers: {}
+  method: GET
+  parameters: {}
+  rate_limit: null
+  response_schema: null
+  url: https://assessor.lacounty.gov/search
+- authentication_required: false
+  data_fields: []
+  description: 'Common endpoint pattern: /query'
+  headers: {}
+  method: GET
+  parameters: {}
+  rate_limit: null
+  response_schema: null
+  url: https://assessor.lacounty.gov/query
+last_updated: '2025-07-12T18:14:02.405712'
+rate_limits:
+  detected: false
+  headers: []
+  limits: {}
+status: active
+version: null

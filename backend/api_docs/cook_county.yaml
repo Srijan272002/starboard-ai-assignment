@@ -1,0 +1,21 @@
+api_name: cook_county
+authentication:
+  headers: []
+  parameters: []
+  required: false
+  type: none
+base_url: https://datacatalog.cookcountyil.gov/api/v2
+contact_info: null
+data_schema:
+  fields: []
+  patterns: {}
+  sample_data: {}
+  types: {}
+endpoints: []
+last_updated: '2025-07-12T18:13:44.717395'
+rate_limits:
+  detected: false
+  headers: []
+  limits: {}
+status: error
+version: null

@@ -49,7 +49,14 @@ class APICataloger:
     
     def __init__(self):
         self.analyzer = APIAnalyzer()
-        self.catalog_path = Path(settings.API_DOCUMENTATION_PATH) / "catalog.yaml"
+        
+        # Get absolute path for API documentation
+        docs_path = Path(settings.API_DOCUMENTATION_PATH)
+        if not docs_path.is_absolute():
+            # If relative path, make it relative to the current working directory
+            docs_path = Path.cwd() / docs_path
+            
+        self.catalog_path = docs_path / "catalog.yaml"
         self.catalog: APICatalog = APICatalog()
         self._ensure_catalog_directory()
     

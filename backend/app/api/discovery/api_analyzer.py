@@ -476,8 +476,14 @@ class APIAnalyzer:
         import os
         from pathlib import Path
         
+        # Get absolute path for API documentation
         docs_path = Path(settings.API_DOCUMENTATION_PATH)
-        docs_path.mkdir(exist_ok=True)
+        if not docs_path.is_absolute():
+            # If relative path, make it relative to the current working directory
+            docs_path = Path.cwd() / docs_path
+        
+        # Create directory if it doesn't exist
+        docs_path.mkdir(parents=True, exist_ok=True)
         
         file_path = docs_path / f"{documentation.api_name}.yaml"
         

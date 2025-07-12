@@ -64,9 +64,11 @@ class RateLimiter:
     def _initialize_redis(self):
         """Initialize Redis connection if available"""
         try:
-            if settings.RATE_LIMIT_REDIS_URL:
+            # Use RATE_LIMIT_REDIS_URL with fallback to REDIS_URL
+            redis_url = settings.RATE_LIMIT_REDIS_URL or settings.REDIS_URL
+            if redis_url:
                 self.redis_client = redis.from_url(
-                    settings.RATE_LIMIT_REDIS_URL,
+                    redis_url,
                     decode_responses=True
                 )
                 logger.info("Redis rate limiter initialized")

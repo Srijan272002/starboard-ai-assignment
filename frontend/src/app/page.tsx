@@ -1,120 +1,118 @@
-import React from 'react';
-import Link from 'next/link';
-import MainLayout from '../components/layout/MainLayout';
-import Card from '../components/ui/Card';
-import { ArrowRightIcon } from '@heroicons/react/24/outline';
+'use client'
+
+import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
+import { motion } from 'framer-motion'
 
 export default function Home() {
+  const router = useRouter()
+
+  const handleGetStarted = () => {
+    router.push('/compare')
+  }
+
+  const handleLearnMore = () => {
+    router.push('/compare')
+  }
+
   return (
-    <MainLayout>
-      <div className="space-y-12">
-        {/* Hero Section */}
-        <section className="bg-blue-600 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-16 text-white rounded-lg">
-          <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl mb-6">
-              Find and Analyze Property Data
-            </h1>
-            <p className="text-xl text-blue-100 mb-8">
-              Comprehensive property data from multiple counties, all in one place.
-              Search, compare, and analyze with powerful tools.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link 
-                href="/search" 
-                className="bg-white text-blue-600 hover:bg-blue-50 px-6 py-3 rounded-md font-medium text-lg"
-              >
-                Search Properties
-              </Link>
-              <Link 
-                href="/dashboard" 
-                className="bg-blue-700 text-white hover:bg-blue-800 px-6 py-3 rounded-md font-medium text-lg"
-              >
-                View Dashboard
-              </Link>
+    <main className="min-h-screen">
+      {/* Hero Section */}
+      <section className="relative py-20 px-4 sm:px-6 lg:px-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mx-auto max-w-4xl text-center"
+        >
+          <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-6xl sm:leading-tight">
+            Property Analytics Made Simple
+          </h1>
+          <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-gray-600 dark:text-gray-300">
+            Get deep insights into property markets with advanced analytics and real-time data.
+            Make informed decisions with our comprehensive property analysis platform.
+          </p>
+          <div className="mt-10 flex items-center justify-center gap-x-6">
+            <Button size="lg" onClick={handleGetStarted}>
+              Get Started
+            </Button>
+            <Button variant="outline" size="lg" onClick={handleLearnMore}>
+              Learn More
+            </Button>
+          </div>
+        </motion.div>
+      </section>
+
+      {/* Features Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50 dark:bg-gray-900/50">
+        <div className="mx-auto max-w-7xl">
+          <h2 className="text-center text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl mb-16">
+            Key Features
+          </h2>
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            >
+              <Card isHoverable className="h-full p-8">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Market Analysis</h3>
+                <p className="text-gray-600 dark:text-gray-300">
+                  Deep dive into market trends with our advanced analytics tools.
+                </p>
+              </Card>
+            </motion.div>
+            
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              <Card isHoverable className="h-full p-8">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Property Insights</h3>
+                <p className="text-gray-600 dark:text-gray-300">
+                  Get detailed property information and comparative analysis.
+                </p>
+              </Card>
+            </motion.div>
+            
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+            >
+              <Card isHoverable className="h-full p-8">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Real-time Data</h3>
+                <p className="text-gray-600 dark:text-gray-300">
+                  Access up-to-date property data and market statistics.
+                </p>
+              </Card>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50 dark:bg-gray-900/50">
+        <div className="mx-auto max-w-7xl">
+          <h2 className="text-center text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl mb-16">
+            How It Works
+          </h2>
+          <div className="grid gap-8 sm:grid-cols-2">
+            <div className="flex flex-col items-center text-center">
+              <div className="flex items-center justify-center w-16 h-16 rounded-full bg-primary text-primary-foreground text-2xl font-bold mb-4">1</div>
+              <h3 className="text-xl font-semibold mb-2">Analyze Properties</h3>
+              <p className="text-gray-600 dark:text-gray-300">Compare, analyze, and visualize property data and market trends.</p>
+            </div>
+            <div className="flex flex-col items-center text-center">
+              <div className="flex items-center justify-center w-16 h-16 rounded-full bg-primary text-primary-foreground text-2xl font-bold mb-4">2</div>
+              <h3 className="text-xl font-semibold mb-2">Make Decisions</h3>
+              <p className="text-gray-600 dark:text-gray-300">Use insights to make smarter property investment decisions.</p>
             </div>
           </div>
-        </section>
-
-
-        {/* Features Section */}
-        <section>
-          <h2 className="text-2xl font-bold mb-8 text-center">Key Features</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card className="p-6">
-              <div className="flex flex-col h-full">
-                <h3 className="text-xl font-semibold mb-4">Property Search</h3>
-                <p className="text-gray-600 mb-6 flex-grow">
-                  Search across multiple counties with advanced filtering options to find exactly what you're looking for.
-                </p>
-                <Link 
-                  href="/search" 
-                  className="flex items-center text-blue-600 hover:text-blue-800 font-medium"
-                >
-                  Try it now
-                  <ArrowRightIcon className="h-4 w-4 ml-1" />
-                </Link>
-              </div>
-            </Card>
-            
-            <Card className="p-6">
-              <div className="flex flex-col h-full">
-                <h3 className="text-xl font-semibold mb-4">Data Visualization</h3>
-                <p className="text-gray-600 mb-6 flex-grow">
-                  Interactive maps, charts, and graphs to help you visualize property data and market trends.
-                </p>
-                <Link 
-                  href="/dashboard" 
-                  className="flex items-center text-blue-600 hover:text-blue-800 font-medium"
-                >
-                  View dashboard
-                  <ArrowRightIcon className="h-4 w-4 ml-1" />
-                </Link>
-              </div>
-            </Card>
-            
-            <Card className="p-6">
-              <div className="flex flex-col h-full">
-                <h3 className="text-xl font-semibold mb-4">Property Comparison</h3>
-                <p className="text-gray-600 mb-6 flex-grow">
-                  Compare multiple properties side by side to make informed decisions about your investments.
-                </p>
-                <Link 
-                  href="/compare" 
-                  className="flex items-center text-blue-600 hover:text-blue-800 font-medium"
-                >
-                  Compare properties
-                  <ArrowRightIcon className="h-4 w-4 ml-1" />
-                </Link>
-              </div>
-            </Card>
-          </div>
-        </section>
-
-        {/* Counties Section */}
-        <section>
-          <h2 className="text-2xl font-bold mb-8 text-center">Available Counties</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Link href="/search?county=cook" className="block">
-              <Card className="p-6 hover:shadow-md transition-shadow">
-                <h3 className="text-xl font-semibold mb-2">Cook County</h3>
-                <p className="text-gray-600">Illinois</p>
-              </Card>
-            </Link>
-            <Link href="/search?county=dallas" className="block">
-              <Card className="p-6 hover:shadow-md transition-shadow">
-                <h3 className="text-xl font-semibold mb-2">Dallas County</h3>
-                <p className="text-gray-600">Texas</p>
-              </Card>
-            </Link>
-            <Link href="/search?county=la" className="block">
-              <Card className="p-6 hover:shadow-md transition-shadow">
-                <h3 className="text-xl font-semibold mb-2">LA County</h3>
-                <p className="text-gray-600">California</p>
-              </Card>
-            </Link>
-          </div>
-        </section>
-      </div>
-    </MainLayout>
-  );
+        </div>
+      </section>
+    </main>
+  )
 }

@@ -1,0 +1,4 @@
+{"timestamp": "2025-07-13T16:04:07.197774", "level": "INFO", "logger": "main", "message": "Starting health monitoring", "module": "main", "function": "startup_event", "line": 38}
+{"timestamp": "2025-07-13T16:05:08.855475", "level": "INFO", "logger": "main", "message": "Stopping health monitoring", "module": "main", "function": "shutdown_event", "line": 46}
+{"timestamp": "2025-07-13T16:32:34.800513", "level": "INFO", "logger": "main", "message": "Starting health monitoring", "module": "main", "function": "startup_event", "line": 38}
+{"timestamp": "2025-07-13T16:32:38.605109", "level": "INFO", "logger": "main", "message": "Stopping health monitoring", "module": "main", "function": "shutdown_event", "line": 46}

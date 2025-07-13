@@ -1,335 +1,176 @@
-'use client';
+'use client'
+import { Suspense, useState } from 'react';
+import { Card } from '@/components/ui/Card';
 
-import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
-import Link from 'next/link';
-import MainLayout from '../../components/layout/MainLayout';
-import Card from '../../components/ui/Card';
-import Button from '../../components/ui/Button';
-import PropertyCard, { Property } from '../../components/properties/PropertyCard';
-import ComparisonChart from '../../components/charts/ComparisonChart';
-import PropertyMap from '../../components/maps/PropertyMap';
+// Add types for property input and comparable result
+interface PropertyInput {
+  address: string;
+  price: string;
+  squareFootage: string;
+  yearBuilt: string;
+  propertyType: string;
+}
 
-// Mock data for demonstration
-const mockProperties: Property[] = [
-  {
-    id: '1',
-    address: '123 Main St',
-    city: 'Chicago',
-    state: 'IL',
-    zipCode: '60601',
-    price: 450000,
-    bedrooms: 3,
-    bathrooms: 2,
-    squareFeet: 1800,
-    propertyType: 'Residential',
-    yearBuilt: 2005,
-    county: 'cook',
-  },
-  {
-    id: '2',
-    address: '456 Oak Ave',
-    city: 'Chicago',
-    state: 'IL',
-    zipCode: '60602',
-    price: 550000,
-    bedrooms: 4,
-    bathrooms: 3,
-    squareFeet: 2200,
-    propertyType: 'Residential',
-    yearBuilt: 2010,
-    county: 'cook',
-  },
-  {
-    id: '3',
-    address: '789 Pine Blvd',
-    city: 'Dallas',
-    state: 'TX',
-    zipCode: '75201',
-    price: 650000,
-    bedrooms: 4,
-    bathrooms: 3.5,
-    squareFeet: 2800,
-    propertyType: 'Residential',
-    yearBuilt: 2015,
-    county: 'dallas',
-  },
-  {
-    id: '4',
-    address: '101 Cedar St',
-    city: 'Los Angeles',
-    state: 'CA',
-    zipCode: '90001',
-    price: 850000,
-    bedrooms: 5,
-    bathrooms: 4,
-    squareFeet: 3200,
-    propertyType: 'Residential',
-    yearBuilt: 2018,
-    county: 'la',
-  },
-  {
-    id: '5',
-    address: '202 Commercial Plaza',
-    city: 'Chicago',
-    state: 'IL',
-    zipCode: '60603',
-    price: 1200000,
-    propertyType: 'Commercial',
-    squareFeet: 5000,
-    yearBuilt: 2000,
-    county: 'cook',
-  },
-  {
-    id: '6',
-    address: '303 Industrial Park',
-    city: 'Dallas',
-    state: 'TX',
-    zipCode: '75202',
-    price: 1500000,
-    propertyType: 'Industrial',
-    squareFeet: 8000,
-    yearBuilt: 1995,
-    county: 'dallas',
-  },
-];
+interface ComparableResult {
+  address: string;
+  price: number;
+  squareFootage: number;
+  similarityScore: number;
+  confidenceScore: number;
+}
+
+function getRandomInt(min: number, max: number) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function generateRandomProperty(): ComparableResult {
+  const streets = [
+    'Main St', 'Oak Ave', 'Pine Rd', 'Maple Dr', 'Elm St',
+    'Cedar Ln', 'Birch Blvd', 'Spruce Ct', 'Willow Way', 'Ash Pl'
+  ];
+  const cities = ['Springfield', 'Riverside', 'Franklin', 'Greenville', 'Fairview'];
+  const states = ['CA', 'TX', 'FL', 'NY', 'IL'];
+  const address = `${getRandomInt(100, 9999)} ${streets[getRandomInt(0, streets.length-1)]}, ${cities[getRandomInt(0, cities.length-1)]}, ${states[getRandomInt(0, states.length-1)]}`;
+  const price = getRandomInt(200000, 2000000);
+  const squareFootage = getRandomInt(800, 5000);
+  const similarityScore = Math.random();
+  const confidenceScore = Math.random();
+  return { address, price, squareFootage, similarityScore, confidenceScore };
+}
 
 export default function ComparePage() {
-  const searchParams = useSearchParams();
-  const [loading, setLoading] = useState(true);
-  const [properties, setProperties] = useState<Property[]>([]);
+  const [form, setForm] = useState<PropertyInput>({
+    address: '',
+    price: '',
+    squareFootage: '',
+    yearBuilt: '',
+    propertyType: '',
+  });
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<ComparableResult | null>(null);
+  const [comparables, setComparables] = useState<ComparableResult[] | null>(null);
 
-  useEffect(() => {
-    // In a real app, this would fetch data from an API
-    setLoading(true);
-    setTimeout(() => {
-      const ids = searchParams.get('ids')?.split(',') || [];
-      
-      if (ids.length === 0) {
-        setProperties([]);
-        setError('No properties selected for comparison');
-        setLoading(false);
-        return;
-      }
-      
-      const foundProperties = mockProperties.filter(p => ids.includes(p.id));
-      
-      if (foundProperties.length === 0) {
-        setError('No matching properties found');
-      } else {
-        setProperties(foundProperties);
-        setError(null);
-      }
-      
-      setLoading(false);
-    }, 500);
-  }, [searchParams]);
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      maximumFractionDigits: 0,
-    }).format(price);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  if (loading) {
-    return (
-      <MainLayout>
-        <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="h-64 bg-gray-200 rounded"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="h-40 bg-gray-200 rounded"></div>
-            <div className="h-40 bg-gray-200 rounded"></div>
-          </div>
-        </div>
-      </MainLayout>
-    );
-  }
-
-  if (error && properties.length === 0) {
-    return (
-      <MainLayout>
-        <Card className="p-8 text-center">
-          <h2 className="text-2xl font-bold text-red-600 mb-4">Error</h2>
-          <p className="text-gray-600 mb-6">{error}</p>
-          <Link href="/search">
-            <Button>Search Properties</Button>
-          </Link>
-        </Card>
-      </MainLayout>
-    );
-  }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setResult(null);
+    setComparables(null);
+    try {
+      // Generate 10 random comparables
+      const comps = Array.from({ length: 10 }, generateRandomProperty);
+      // Sort by similarityScore descending (best first)
+      comps.sort((a, b) => b.similarityScore - a.similarityScore);
+      setComparables(comps);
+      setResult(comps[0]); // Show only the best comparable
+    } catch (err: any) {
+      setError('Error generating comparables');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <MainLayout>
-      <div className="space-y-8">
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Compare Properties</h1>
-          <p className="text-gray-600">
-            {properties.length === 1 
-              ? 'Add more properties to compare' 
-              : `Comparing ${properties.length} properties`}
-          </p>
-        </div>
+    <div className="container mx-auto py-8">
+      <h1 className="text-3xl font-bold mb-6">Property Comparison</h1>
 
-        {/* Property Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {properties.map(property => (
-            <div key={property.id} className="relative">
-              <PropertyCard property={property} />
-              <button 
-                className="absolute top-2 right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-700"
-                onClick={() => {
-                  const newProperties = properties.filter(p => p.id !== property.id);
-                  setProperties(newProperties);
-                  
-                  // Update URL
-                  const newIds = newProperties.map(p => p.id).join(',');
-                  const url = newIds ? `/compare?ids=${newIds}` : '/compare';
-                  window.history.pushState({}, '', url);
-                }}
-              >
-                ×
-              </button>
+      {/* Property Input Form */}
+      <Card className="mb-6 p-4">
+        <form onSubmit={handleSubmit} className="flex flex-col md:flex-row md:items-end md:space-x-2 space-y-2 md:space-y-0">
+          <div className="flex flex-col w-full md:w-auto">
+            <label className="block text-xs font-medium mb-0.5">Address</label>
+            <input name="address" value={form.address} onChange={handleChange} required className="rounded border px-2 py-1 text-black text-sm min-w-[120px]" />
+          </div>
+          <div className="flex flex-col w-full md:w-auto">
+            <label className="block text-xs font-medium mb-0.5">Price</label>
+            <input name="price" type="number" value={form.price} onChange={handleChange} required className="rounded border px-2 py-1 text-black text-sm min-w-[100px]" />
+          </div>
+          <div className="flex flex-col w-full md:w-auto">
+            <label className="block text-xs font-medium mb-0.5">Square Footage</label>
+            <input name="squareFootage" type="number" value={form.squareFootage} onChange={handleChange} required className="rounded border px-2 py-1 text-black text-sm min-w-[100px]" />
+          </div>
+          <div className="flex flex-col w-full md:w-auto">
+            <label className="block text-xs font-medium mb-0.5">Year Built</label>
+            <input name="yearBuilt" type="number" value={form.yearBuilt} onChange={handleChange} className="rounded border px-2 py-1 text-black text-sm min-w-[90px]" />
+          </div>
+          <div className="flex flex-col w-full md:w-auto">
+            <label className="block text-xs font-medium mb-0.5">Property Type</label>
+            <select name="propertyType" value={form.propertyType} onChange={handleChange} className="rounded border px-2 py-1 text-black text-sm min-w-[110px]">
+              <option value="">Select</option>
+              <option value="industrial">Industrial</option>
+              <option value="warehouse">Warehouse</option>
+              <option value="manufacturing">Manufacturing</option>
+            </select>
+          </div>
+          <button
+            type="submit"
+            className="mt-4 md:mt-0 px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90 font-semibold text-sm whitespace-nowrap"
+            disabled={loading}
+          >
+            {loading ? 'Comparing...' : 'Find Comparables'}
+          </button>
+        </form>
+        {error && <div className="text-red-600 mt-2">{error}</div>}
+      </Card>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Suspense fallback={<Card className="h-[600px] animate-pulse" />}>
+          <Card className="p-6">
+            <div className="text-lg font-semibold mb-4">Property A</div>
+            <div className="space-y-4">
+              <div className="border-b pb-2">
+                <div className="text-sm text-gray-500">Address</div>
+                <div>{form.address || '123 Example St, City, State'}</div>
+              </div>
+              <div className="border-b pb-2">
+                <div className="text-sm text-gray-500">Price</div>
+                <div>{form.price ? `$${Number(form.price).toLocaleString()}` : '$500,000'}</div>
+              </div>
+              <div className="border-b pb-2">
+                <div className="text-sm text-gray-500">Square Footage</div>
+                <div>{form.squareFootage ? `${form.squareFootage} sq ft` : '2,000 sq ft'}</div>
+              </div>
             </div>
-          ))}
-          
-          {/* Add Property Card */}
-          {properties.length < 3 && (
-            <Link href="/search" className="block">
-              <Card className="h-full flex items-center justify-center p-6 border-dashed">
-                <div className="text-center">
-                  <div className="text-5xl text-gray-300 mb-2">+</div>
-                  <p className="text-gray-500">Add Property</p>
+          </Card>
+        </Suspense>
+
+        <Suspense fallback={<Card className="h-[600px] animate-pulse" />}>
+          <Card className="p-6">
+            <div className="text-lg font-semibold mb-4">Property B (Best Comparable)</div>
+            {comparables && result ? (
+              <div className="space-y-4">
+                <div className="border-b pb-2">
+                  <div className="text-sm text-gray-500">Address</div>
+                  <div>{result.address}</div>
                 </div>
-              </Card>
-            </Link>
-          )}
-        </div>
-
-        {properties.length > 1 && (
-          <>
-            {/* Comparison Chart */}
-            <div>
-              <h2 className="text-2xl font-bold mb-4">Price Comparison</h2>
-              <ComparisonChart properties={properties} />
-            </div>
-
-            {/* Comparison Table */}
-            <div>
-              <h2 className="text-2xl font-bold mb-4">Property Comparison</h2>
-              <Card className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Feature
-                      </th>
-                      {properties.map(property => (
-                        <th key={property.id} scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          {property.address.split(',')[0]}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    <tr>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        Price
-                      </td>
-                      {properties.map(property => (
-                        <td key={property.id} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {formatPrice(property.price)}
-                        </td>
-                      ))}
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        Property Type
-                      </td>
-                      {properties.map(property => (
-                        <td key={property.id} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {property.propertyType}
-                        </td>
-                      ))}
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        Bedrooms
-                      </td>
-                      {properties.map(property => (
-                        <td key={property.id} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {property.bedrooms || '-'}
-                        </td>
-                      ))}
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        Bathrooms
-                      </td>
-                      {properties.map(property => (
-                        <td key={property.id} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {property.bathrooms || '-'}
-                        </td>
-                      ))}
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        Square Feet
-                      </td>
-                      {properties.map(property => (
-                        <td key={property.id} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {property.squareFeet ? property.squareFeet.toLocaleString() : '-'}
-                        </td>
-                      ))}
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        Year Built
-                      </td>
-                      {properties.map(property => (
-                        <td key={property.id} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {property.yearBuilt || '-'}
-                        </td>
-                      ))}
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        Location
-                      </td>
-                      {properties.map(property => (
-                        <td key={property.id} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {property.city}, {property.state}
-                        </td>
-                      ))}
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        County
-                      </td>
-                      {properties.map(property => (
-                        <td key={property.id} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {property.county.charAt(0).toUpperCase() + property.county.slice(1)} County
-                        </td>
-                      ))}
-                    </tr>
-                  </tbody>
-                </table>
-              </Card>
-            </div>
-
-            {/* Map */}
-            <div>
-              <h2 className="text-2xl font-bold mb-4">Property Locations</h2>
-              <PropertyMap properties={properties} height="400px" />
-            </div>
-          </>
-        )}
+                <div className="border-b pb-2">
+                  <div className="text-sm text-gray-500">Price</div>
+                  <div>${result.price?.toLocaleString()}</div>
+                </div>
+                <div className="border-b pb-2">
+                  <div className="text-sm text-gray-500">Square Footage</div>
+                  <div>{result.squareFootage} sq ft</div>
+                </div>
+                <div className="border-b pb-2">
+                  <div className="text-sm text-gray-500">Similarity Score</div>
+                  <div>{(result.similarityScore * 100).toFixed(1)}%</div>
+                </div>
+                <div className="border-b pb-2">
+                  <div className="text-sm text-gray-500">Confidence Score</div>
+                  <div>{(result.confidenceScore * 100).toFixed(1)}%</div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-gray-400">No comparable selected. Fill the form and submit to see results.</div>
+            )}
+          </Card>
+        </Suspense>
       </div>
-    </MainLayout>
+    </div>
   );
 } 

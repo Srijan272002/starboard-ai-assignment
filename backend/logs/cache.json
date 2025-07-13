@@ -1,0 +1,47 @@
+{"timestamp": "2025-07-13T18:45:52.703358", "level": "INFO", "logger": "cache", "message": "Connected to Redis cache", "module": "cache", "function": "connect", "line": 71}
+{"timestamp": "2025-07-13T18:45:52.715358", "level": "ERROR", "logger": "cache", "message": "Cache decorator error for get_market_trends:2025-01-14 18:45:52.702358:2025-07-13 18:45:52.702358: '_GeneratorContextManager' object does not support the asynchronous context manager protocol", "module": "cache", "function": "wrapper", "line": 48}
+{"timestamp": "2025-07-13T18:45:52.719358", "level": "ERROR", "logger": "cache", "message": "Cache decorator error for get_market_trends:2025-01-14 18:45:52.707357:2025-07-13 18:45:52.707357: '_GeneratorContextManager' object does not support the asynchronous context manager protocol", "module": "cache", "function": "wrapper", "line": 48}
+{"timestamp": "2025-07-13T18:45:52.721360", "level": "ERROR", "logger": "cache", "message": "Cache decorator error for get_price_distribution: '_GeneratorContextManager' object does not support the asynchronous context manager protocol", "module": "cache", "function": "wrapper", "line": 48}
+{"timestamp": "2025-07-13T18:45:52.729359", "level": "ERROR", "logger": "cache", "message": "Cache decorator error for get_market_trends:2025-01-14 18:45:52.724358:2025-07-13 18:45:52.724358: '_GeneratorContextManager' object does not support the asynchronous context manager protocol", "module": "cache", "function": "wrapper", "line": 48}
+{"timestamp": "2025-07-13T18:45:52.733360", "level": "ERROR", "logger": "cache", "message": "Cache decorator error for get_price_distribution: '_GeneratorContextManager' object does not support the asynchronous context manager protocol", "module": "cache", "function": "wrapper", "line": 48}
+{"timestamp": "2025-07-13T18:45:52.736358", "level": "ERROR", "logger": "cache", "message": "Cache decorator error for get_market_trends:2025-01-14 18:45:52.729358:2025-07-13 18:45:52.729358: '_GeneratorContextManager' object does not support the asynchronous context manager protocol", "module": "cache", "function": "wrapper", "line": 48}
+{"timestamp": "2025-07-13T18:56:35.136738", "level": "INFO", "logger": "cache", "message": "Connected to Redis cache", "module": "cache", "function": "connect", "line": 71}
+{"timestamp": "2025-07-13T18:56:35.144739", "level": "ERROR", "logger": "cache", "message": "Cache decorator error for get_market_trends:2025-01-14 18:56:35.138738:2025-07-13 18:56:35.138738: type object 'PropertyFinancials' has no attribute 'sale_date'", "module": "cache", "function": "wrapper", "line": 48}
+{"timestamp": "2025-07-13T18:56:35.151741", "level": "ERROR", "logger": "cache", "message": "Cache decorator error for get_price_distribution: type object 'PropertyFinancials' has no attribute 'sale_date'", "module": "cache", "function": "wrapper", "line": 48}
+{"timestamp": "2025-07-13T18:56:35.159739", "level": "ERROR", "logger": "cache", "message": "Cache decorator error for get_market_trends:2025-01-14 18:56:35.156741:2025-07-13 18:56:35.156741: type object 'PropertyFinancials' has no attribute 'sale_date'", "module": "cache", "function": "wrapper", "line": 48}
+{"timestamp": "2025-07-13T18:56:35.165742", "level": "ERROR", "logger": "cache", "message": "Cache decorator error for get_price_distribution: type object 'PropertyFinancials' has no attribute 'sale_date'", "module": "cache", "function": "wrapper", "line": 48}
+{"timestamp": "2025-07-13T19:11:18.235631", "level": "INFO", "logger": "cache", "message": "Connected to Redis cache", "module": "cache", "function": "connect", "line": 71}
+{"timestamp": "2025-07-13T23:30:32.108459", "level": "INFO", "logger": "cache", "message": "Connected to Redis cache", "module": "cache", "function": "connect", "line": 71}
+{"timestamp": "2025-07-13T23:42:06.864136", "level": "INFO", "logger": "cache", "message": "Connected to Redis cache", "module": "cache", "function": "connect", "line": 71}
+{"timestamp": "2025-07-13T23:44:10.246789", "level": "INFO", "logger": "cache", "message": "Connected to Redis cache", "module": "cache", "function": "connect", "line": 71}
+{"timestamp": "2025-07-13T23:50:31.418996", "level": "INFO", "logger": "cache", "message": "Connected to Redis cache", "module": "cache", "function": "connect", "line": 71}
+{"timestamp": "2025-07-14T00:13:31.463394", "level": "INFO", "logger": "cache", "message": "Connected to Redis cache", "module": "cache", "function": "connect", "line": 71}
+{"timestamp": "2025-07-14T00:13:31.468394", "level": "INFO", "logger": "cache", "message": "Connected to Redis cache", "module": "cache", "function": "connect", "line": 71}
+{"timestamp": "2025-07-14T00:13:31.474394", "level": "INFO", "logger": "cache", "message": "Connected to Redis cache", "module": "cache", "function": "connect", "line": 71}
+{"timestamp": "2025-07-14T00:14:55.077603", "level": "INFO", "logger": "cache", "message": "Connected to Redis cache", "module": "cache", "function": "connect", "line": 71}
+{"timestamp": "2025-07-14T00:14:55.080604", "level": "INFO", "logger": "cache", "message": "Connected to Redis cache", "module": "cache", "function": "connect", "line": 71}
+{"timestamp": "2025-07-14T00:19:35.519434", "level": "INFO", "logger": "cache", "message": "Connected to Redis cache", "module": "cache", "function": "connect", "line": 71}
+{"timestamp": "2025-07-14T00:19:39.801953", "level": "INFO", "logger": "cache", "message": "Connected to Redis cache", "module": "cache", "function": "connect", "line": 71}
+{"timestamp": "2025-07-14T00:19:39.804954", "level": "INFO", "logger": "cache", "message": "Connected to Redis cache", "module": "cache", "function": "connect", "line": 71}
+{"timestamp": "2025-07-14T00:19:45.545580", "level": "INFO", "logger": "cache", "message": "Connected to Redis cache", "module": "cache", "function": "connect", "line": 71}
+{"timestamp": "2025-07-14T00:23:58.113308", "level": "INFO", "logger": "cache", "message": "Connected to Redis cache", "module": "cache", "function": "connect", "line": 71}
+{"timestamp": "2025-07-14T00:23:58.115309", "level": "INFO", "logger": "cache", "message": "Connected to Redis cache", "module": "cache", "function": "connect", "line": 71}
+{"timestamp": "2025-07-14T00:24:59.878552", "level": "INFO", "logger": "cache", "message": "Connected to Redis cache", "module": "cache", "function": "connect", "line": 71}
+{"timestamp": "2025-07-14T00:25:30.856410", "level": "INFO", "logger": "cache", "message": "Connected to Redis cache", "module": "cache", "function": "connect", "line": 71}
+{"timestamp": "2025-07-14T00:25:30.858409", "level": "INFO", "logger": "cache", "message": "Connected to Redis cache", "module": "cache", "function": "connect", "line": 71}
+{"timestamp": "2025-07-14T00:26:01.750602", "level": "INFO", "logger": "cache", "message": "Connected to Redis cache", "module": "cache", "function": "connect", "line": 71}
+{"timestamp": "2025-07-14T00:26:01.752601", "level": "INFO", "logger": "cache", "message": "Connected to Redis cache", "module": "cache", "function": "connect", "line": 71}
+{"timestamp": "2025-07-14T00:27:23.761432", "level": "INFO", "logger": "cache", "message": "Connected to Redis cache", "module": "cache", "function": "connect", "line": 71}
+{"timestamp": "2025-07-14T00:27:31.753667", "level": "INFO", "logger": "cache", "message": "Connected to Redis cache", "module": "cache", "function": "connect", "line": 71}
+{"timestamp": "2025-07-14T00:29:52.901484", "level": "INFO", "logger": "cache", "message": "Connected to Redis cache", "module": "cache", "function": "connect", "line": 71}
+{"timestamp": "2025-07-14T00:29:52.904485", "level": "INFO", "logger": "cache", "message": "Connected to Redis cache", "module": "cache", "function": "connect", "line": 71}
+{"timestamp": "2025-07-14T00:33:13.106782", "level": "INFO", "logger": "cache", "message": "Connected to Redis cache", "module": "cache", "function": "connect", "line": 71}
+{"timestamp": "2025-07-14T01:35:29.987779", "level": "INFO", "logger": "cache", "message": "Connected to Redis cache", "module": "cache", "function": "connect", "line": 71}
+{"timestamp": "2025-07-14T01:35:29.991780", "level": "INFO", "logger": "cache", "message": "Connected to Redis cache", "module": "cache", "function": "connect", "line": 71}
+{"timestamp": "2025-07-14T01:35:29.995780", "level": "INFO", "logger": "cache", "message": "Connected to Redis cache", "module": "cache", "function": "connect", "line": 71}
+{"timestamp": "2025-07-14T01:40:29.819072", "level": "INFO", "logger": "cache", "message": "Connected to Redis cache", "module": "cache", "function": "connect", "line": 71}
+{"timestamp": "2025-07-14T01:40:29.822075", "level": "INFO", "logger": "cache", "message": "Connected to Redis cache", "module": "cache", "function": "connect", "line": 71}
+{"timestamp": "2025-07-14T01:41:01.757055", "level": "INFO", "logger": "cache", "message": "Connected to Redis cache", "module": "cache", "function": "connect", "line": 71}
+{"timestamp": "2025-07-14T01:43:46.697401", "level": "INFO", "logger": "cache", "message": "Connected to Redis cache", "module": "cache", "function": "connect", "line": 71}
+{"timestamp": "2025-07-14T01:43:46.700401", "level": "INFO", "logger": "cache", "message": "Connected to Redis cache", "module": "cache", "function": "connect", "line": 71}
+{"timestamp": "2025-07-14T01:48:50.564088", "level": "INFO", "logger": "cache", "message": "Connected to Redis cache", "module": "cache", "function": "connect", "line": 71}
